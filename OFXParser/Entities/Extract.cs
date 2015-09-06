@@ -23,22 +23,25 @@ namespace OFXParser.Entities
         public Extract(HeaderExtract header, BankAccount bankAccount,
             String status, DateTime initialDate, DateTime finalDate)
         {
-            this.Header = header;
-            this.BankAccount = bankAccount;
-            this.Status = status;
+            Init(header, bankAccount, status);
+
             this.InitialDate = initialDate;
             this.FinalDate = finalDate;
-            this.Transactions = new List<Transaction>();
-            this.ImportingErrors = new List<string>();
         }
 
         public Extract(HeaderExtract header, BankAccount bankAccount,
             String status)
         {
+            Init(header, bankAccount, status);
+        }
+
+        private void Init(HeaderExtract header, BankAccount bankAccount, String status)
+        {
             this.Header = header;
             this.BankAccount = bankAccount;
             this.Status = status;
             this.Transactions = new List<Transaction>();
+            this.ImportingErrors = new List<string>();
         }
 
         public void AddTransaction(Transaction transaction)
