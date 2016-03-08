@@ -17,6 +17,12 @@ namespace OFXParser
         SECOND
     }
 
+    public class ParserSettings
+    {
+        public bool IsValidateHeader { get; set; }
+        public bool IsValidateAccountData { get; set; }
+    }
+
     public class Parser
     {
         /// <summary>
@@ -71,6 +77,13 @@ namespace OFXParser
         /// <returns>Extract object with OFX file data.</returns>
         public static Extract GenerateExtract(String ofxSourceFile)
         {
+            return GetExtract(ofxSourceFile, new ParserSettings());
+        }
+
+        public static Extract GetExtract(String ofxSourceFile, ParserSettings settings)
+        {
+            if (settings == null) settings = new ParserSettings();
+
             Boolean temTransacao = false;
             Boolean temCabecalho = false;
             Boolean temDadosConta = false;
@@ -137,11 +150,9 @@ namespace OFXParser
                                 break;
                             case "DTSTART":
                                 extrato.InitialDate = ConvertOfxDateToDateTime(meuXml.Value, extrato);
-                                temDadosPrincipaisExtrato = true;
                                 break;
                             case "DTEND":
                                 extrato.FinalDate = ConvertOfxDateToDateTime(meuXml.Value, extrato);
-                                temDadosPrincipaisExtrato = true;
                                 break;
                             case "BANKID":
                                 conta.Bank = new Bank(GetBankId(meuXml.Value, extrato), "");
@@ -190,11 +201,11 @@ namespace OFXParser
                 meuXml.Close();
             }
 
-            if ((temCabecalho == false) || (temDadosConta == false) || (temDadosPrincipaisExtrato == false))
+            if ((settings.IsValidateHeader && temCabecalho == false) || 
+                (settings.IsValidateAccountData && temDadosConta == false))
             {
                 throw new OFXParserException("Invalid OFX file!");
             }
-
             return extrato;
         }
 
