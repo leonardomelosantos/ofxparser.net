@@ -30,7 +30,7 @@ namespace OFXParser
         /// </summary>
         /// <param name="ofxSourceFile">OFX source file</param>
         /// <returns>XML tags in StringBuilder object.</returns>
-        private static StringBuilder TranslateToXML(String ofxSourceFile)
+        private static StringBuilder TranslateToXml(String ofxSourceFile)
         {
             StringBuilder resultado = new StringBuilder();
             int nivel = 0;
@@ -84,13 +84,11 @@ namespace OFXParser
         {
             if (settings == null) settings = new ParserSettings();
 
-            Boolean temTransacao = false;
             Boolean temCabecalho = false;
             Boolean temDadosConta = false;
-            Boolean temDadosPrincipaisExtrato = false;
-
+            
             // Translating to XML file
-            ExportToXML(ofxSourceFile, ofxSourceFile + ".xml");
+            ExportToXml(ofxSourceFile, ofxSourceFile + ".xml");
 
             // Variáveis úteis para o Parse
             String elementoSendoLido = "";
@@ -116,7 +114,6 @@ namespace OFXParser
                                 {
                                     extrato.AddTransaction(transacaoAtual);
                                     transacaoAtual = null;
-                                    temTransacao = true;
                                 }
                                 break;
                         }
@@ -214,14 +211,14 @@ namespace OFXParser
         /// </summary>
         /// <param name="ofxSourceFile">Path of OFX source file</param>
         /// <param name="xmlNewFile">Path of the XML file, internally generated.</param>
-        private static void ExportToXML(String ofxSourceFile, String xmlNewFile)
+        private static void ExportToXml(String ofxSourceFile, String xmlNewFile)
         {
             if (System.IO.File.Exists(ofxSourceFile)) 
             {
                 if (xmlNewFile.ToLower().EndsWith(".xml"))
                 {
                     // Translating the OFX file to XML format
-                    StringBuilder ofxTranslated = TranslateToXML(ofxSourceFile);
+                    StringBuilder ofxTranslated = TranslateToXml(ofxSourceFile);
 
                     // Verifying if target file exists
                     if (System.IO.File.Exists(xmlNewFile))
@@ -340,11 +337,11 @@ namespace OFXParser
         /// <summary>
         /// Method that convert a OFX date string to DateTime object.
         /// </summary>
-        /// <param name="ofxDate">Date</param>
-        /// <returns>Object DateTime</returns>
+        /// <param name="ofxDate"></param>
+        /// <param name="extract"></param>
+        /// <returns></returns>
         private static DateTime ConvertOfxDateToDateTime(String ofxDate, Extract extract) {
             DateTime dateTimeReturned = DateTime.MinValue;
-
             try
             {
                 int year = GetPartOfOfxDate(ofxDate, PartDateTime.YEAR);
@@ -360,7 +357,6 @@ namespace OFXParser
             {
                 extract.ImportingErrors.Add(string.Format("Invalid datetime {0}", ofxDate));
             }
-
             return dateTimeReturned;
         }
 
