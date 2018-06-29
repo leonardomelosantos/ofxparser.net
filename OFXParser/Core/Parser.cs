@@ -56,54 +56,41 @@ namespace OFXParser
 
         public static Extract GetExtract(String ofxSourceFile, ParserSettings settings)
         {
-            if (settings == null) settings = new ParserSettings();
-
-            Boolean temCabecalho = false;
-            Boolean temDadosConta = false;
-            
             // Translating to XML file
             ExportToXml(ofxSourceFile, ofxSourceFile + ".xml");
 
-            // Variáveis úteis para o Parse
-            String elementoSendoLido = "";
-            Transaction transacaoAtual = null;
-
-            // Variávies utilizadas para a leitura do XML
             HeaderExtract cabecalho = new HeaderExtract();
             BankAccount conta = new BankAccount();
-            Extract extrato = new Extract(cabecalho, conta, "");
+            return ReadXML(ofxSourceFile, cabecalho, conta, settings);
+        }
 
-            // Lendo o XML efetivamente
+        private static Extract ReadXML(string ofxSourceFile, HeaderExtract cabecalho, BankAccount conta, ParserSettings settings)
+        {
+            var extrato = new Extract(cabecalho, conta, "");
+
+            if (settings == null)
+                settings = new ParserSettings();
+
+            var temCabecalho = false;
+            var temDadosConta = false;
+            var elementoSendoLido = "";
+            Transaction transacaoAtual = null;
+
             XmlTextReader meuXml = new XmlTextReader(ofxSourceFile + ".xml");
             try
             {
                 while (meuXml.Read())
                 {
-                    if (meuXml.NodeType == XmlNodeType.EndElement)
+                    if (meuXml.NodeType == XmlNodeType.EndElement && meuXml.Name == "STMTTRN" && transacaoAtual != null)
                     {
-                        switch (meuXml.Name)
-                        {
-                            case "STMTTRN":
-                                if (transacaoAtual != null)
-                                {
-                                    extrato.AddTransaction(transacaoAtual);
-                                    transacaoAtual = null;
-                                }
-                                break;
-                        }
+                        extrato.AddTransaction(transacaoAtual);
+                        transacaoAtual = null;
                     }
-                    if (meuXml.NodeType == XmlNodeType.Element)
+                    if (meuXml.NodeType == XmlNodeType.Element && ((elementoSendoLido = meuXml.Name) == "STMTTRN"))
                     {
-                        elementoSendoLido = meuXml.Name;
-
-                        switch (elementoSendoLido)
-                        {
-                            case "STMTTRN":
-                                transacaoAtual = new Transaction();
-                                break;
-                        }
+                        transacaoAtual = new Transaction();
                     }
-                    if (meuXml.NodeType == XmlNodeType.Text)
+                    if (meuXml.NodeType == XmlNodeType.Text && !string.IsNullOrEmpty(elementoSendoLido))
                     {
                         switch (elementoSendoLido)
                         {
@@ -161,9 +148,11 @@ namespace OFXParser
                                 break;
                         }
                     }
+                    if ((settings.IsValidateHeader && temCabecalho == false) || (settings.IsValidateAccountData && temDadosConta == false))
+                        throw new XmlException();
                 }
             }
-            catch (XmlException xe)
+            catch (XmlException)
             {
                 throw new OFXParserException("Invalid OFX file!");
             }
@@ -172,11 +161,6 @@ namespace OFXParser
                 meuXml.Close();
             }
 
-            if ((settings.IsValidateHeader && temCabecalho == false) || 
-                (settings.IsValidateAccountData && temDadosConta == false))
-            {
-                throw new OFXParserException("Invalid OFX file!");
-            }
             return extrato;
         }
 
@@ -187,7 +171,7 @@ namespace OFXParser
         /// <param name="xmlNewFile">Path of the XML file, internally generated.</param>
         private static void ExportToXml(String ofxSourceFile, String xmlNewFile)
         {
-            if (System.IO.File.Exists(ofxSourceFile)) 
+            if (System.IO.File.Exists(ofxSourceFile))
             {
                 if (xmlNewFile.ToLower().EndsWith(".xml"))
                 {
@@ -206,8 +190,10 @@ namespace OFXParser
                 else
                 {
                     throw new ArgumentException("Name of new XML file is not valid: " + xmlNewFile);
-                }                
-            } else {
+                }
+            }
+            else
+            {
                 throw new FileNotFoundException("OFX source file not found: " + ofxSourceFile);
             }
         }
@@ -263,16 +249,23 @@ namespace OFXParser
         {
             int result = 0;
 
-            if (PartDateTimeEnum == PartDateTimeEnum.YEAR){
-                result = Int32.Parse(ofxDate.Substring(0,4));
+            if (PartDateTimeEnum == PartDateTimeEnum.YEAR)
+            {
+                result = Int32.Parse(ofxDate.Substring(0, 4));
 
-            } else if (PartDateTimeEnum == PartDateTimeEnum.MONTH) {
+            }
+            else if (PartDateTimeEnum == PartDateTimeEnum.MONTH)
+            {
                 result = Int32.Parse(ofxDate.Substring(4, 2));
 
-            } if (PartDateTimeEnum == PartDateTimeEnum.DAY) {
+            }
+            if (PartDateTimeEnum == PartDateTimeEnum.DAY)
+            {
                 result = Int32.Parse(ofxDate.Substring(6, 2));
 
-            } if (PartDateTimeEnum == PartDateTimeEnum.HOUR) {
+            }
+            if (PartDateTimeEnum == PartDateTimeEnum.HOUR)
+            {
                 if (ofxDate.Length >= 10)
                 {
                     result = Int32.Parse(ofxDate.Substring(8, 2));
@@ -282,7 +275,9 @@ namespace OFXParser
                     result = 0;
                 }
 
-            } if (PartDateTimeEnum == PartDateTimeEnum.MINUTE) {
+            }
+            if (PartDateTimeEnum == PartDateTimeEnum.MINUTE)
+            {
                 if (ofxDate.Length >= 12)
                 {
                     result = Int32.Parse(ofxDate.Substring(10, 2));
@@ -292,7 +287,9 @@ namespace OFXParser
                     result = 0;
                 }
 
-            } if (PartDateTimeEnum == PartDateTimeEnum.SECOND) {
+            }
+            if (PartDateTimeEnum == PartDateTimeEnum.SECOND)
+            {
                 if (ofxDate.Length >= 14)
                 {
                     result = Int32.Parse(ofxDate.Substring(12, 2));
@@ -311,7 +308,8 @@ namespace OFXParser
         /// <param name="ofxDate"></param>
         /// <param name="extract"></param>
         /// <returns></returns>
-        private static DateTime ConvertOfxDateToDateTime(String ofxDate, Extract extract) {
+        private static DateTime ConvertOfxDateToDateTime(String ofxDate, Extract extract)
+        {
             DateTime dateTimeReturned = DateTime.MinValue;
             try
             {

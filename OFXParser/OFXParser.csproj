@@ -47,6 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\ParseSettings.cs" />
+    <Compile Include="Core\PartDateTimeEnum.cs" />
     <Compile Include="Entities\Bank.cs" />
     <Compile Include="Entities\BankAccount.cs" />
     <Compile Include="Entities\Extract.cs" />
