@@ -7,22 +7,6 @@ using OFXParser.Entities;
 
 namespace OFXParser
 {
-    public enum PartDateTime
-    {
-        DAY,
-        MONTH,
-        YEAR,
-        HOUR,
-        MINUTE,
-        SECOND
-    }
-
-    public class ParserSettings
-    {
-        public bool IsValidateHeader { get; set; }
-        public bool IsValidateAccountData { get; set; }
-    }
-
     public class Parser
     {
         /// <summary>
@@ -68,16 +52,6 @@ namespace OFXParser
             sr.Close();
 
             return resultado;
-        }
-
-        /// <summary>
-        /// Extract object with OFX file data. This method checks the OFX file.
-        /// </summary>
-        /// <param name="ofxSourceFile">Full path of OFX file</param>
-        /// <returns>Extract object with OFX file data.</returns>
-        public static Extract GenerateExtract(String ofxSourceFile)
-        {
-            return GetExtract(ofxSourceFile, new ParserSettings());
         }
 
         public static Extract GetExtract(String ofxSourceFile, ParserSettings settings)
@@ -220,11 +194,8 @@ namespace OFXParser
                     // Translating the OFX file to XML format
                     StringBuilder ofxTranslated = TranslateToXml(ofxSourceFile);
 
-                    // Verifying if target file exists
-                    if (System.IO.File.Exists(xmlNewFile))
-                    {
-                        System.IO.File.Delete(xmlNewFile);
-                    }
+                    if (File.Exists(xmlNewFile))
+                        File.Delete(xmlNewFile);
 
                     // Writing data into target file
                     StreamWriter sw = File.CreateText(xmlNewFile);
@@ -286,22 +257,22 @@ namespace OFXParser
         /// Method that return a part of date. Is is used internally when the dates are reading.
         /// </summary>
         /// <param name="ofxDate">Date</param>
-        /// <param name="partDateTime">Part of date</param>
+        /// <param name="PartDateTimeEnum">Part of date</param>
         /// <returns></returns>
-        private static int GetPartOfOfxDate(String ofxDate, PartDateTime partDateTime)
+        private static int GetPartOfOfxDate(String ofxDate, PartDateTimeEnum PartDateTimeEnum)
         {
             int result = 0;
 
-            if (partDateTime == PartDateTime.YEAR){
+            if (PartDateTimeEnum == PartDateTimeEnum.YEAR){
                 result = Int32.Parse(ofxDate.Substring(0,4));
 
-            } else if (partDateTime == PartDateTime.MONTH) {
+            } else if (PartDateTimeEnum == PartDateTimeEnum.MONTH) {
                 result = Int32.Parse(ofxDate.Substring(4, 2));
 
-            } if (partDateTime == PartDateTime.DAY) {
+            } if (PartDateTimeEnum == PartDateTimeEnum.DAY) {
                 result = Int32.Parse(ofxDate.Substring(6, 2));
 
-            } if (partDateTime == PartDateTime.HOUR) {
+            } if (PartDateTimeEnum == PartDateTimeEnum.HOUR) {
                 if (ofxDate.Length >= 10)
                 {
                     result = Int32.Parse(ofxDate.Substring(8, 2));
@@ -311,7 +282,7 @@ namespace OFXParser
                     result = 0;
                 }
 
-            } if (partDateTime == PartDateTime.MINUTE) {
+            } if (PartDateTimeEnum == PartDateTimeEnum.MINUTE) {
                 if (ofxDate.Length >= 12)
                 {
                     result = Int32.Parse(ofxDate.Substring(10, 2));
@@ -321,7 +292,7 @@ namespace OFXParser
                     result = 0;
                 }
 
-            } if (partDateTime == PartDateTime.SECOND) {
+            } if (PartDateTimeEnum == PartDateTimeEnum.SECOND) {
                 if (ofxDate.Length >= 14)
                 {
                     result = Int32.Parse(ofxDate.Substring(12, 2));
@@ -344,12 +315,12 @@ namespace OFXParser
             DateTime dateTimeReturned = DateTime.MinValue;
             try
             {
-                int year = GetPartOfOfxDate(ofxDate, PartDateTime.YEAR);
-                int month = GetPartOfOfxDate(ofxDate, PartDateTime.MONTH);
-                int day = GetPartOfOfxDate(ofxDate, PartDateTime.DAY);
-                int hour = GetPartOfOfxDate(ofxDate, PartDateTime.HOUR);
-                int minute = GetPartOfOfxDate(ofxDate, PartDateTime.MINUTE);
-                int second = GetPartOfOfxDate(ofxDate, PartDateTime.SECOND);
+                int year = GetPartOfOfxDate(ofxDate, PartDateTimeEnum.YEAR);
+                int month = GetPartOfOfxDate(ofxDate, PartDateTimeEnum.MONTH);
+                int day = GetPartOfOfxDate(ofxDate, PartDateTimeEnum.DAY);
+                int hour = GetPartOfOfxDate(ofxDate, PartDateTimeEnum.HOUR);
+                int minute = GetPartOfOfxDate(ofxDate, PartDateTimeEnum.MINUTE);
+                int second = GetPartOfOfxDate(ofxDate, PartDateTimeEnum.SECOND);
 
                 dateTimeReturned = new DateTime(year, month, day, hour, minute, second);
             }
