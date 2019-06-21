@@ -185,6 +185,11 @@ namespace OFXParser
                             case "MEMO":
                                 transacaoAtual.Description = string.IsNullOrEmpty(meuXml.Value) ? "" : meuXml.Value.Trim().Replace("  ", " ");
                                 break;
+                            case "BALAMT":
+                                extrato.FinalBalance = GetTransactionValue(meuXml.Value, extrato);
+                                break;
+                                
+
                         }
                     }
                 }
