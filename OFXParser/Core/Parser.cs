@@ -381,7 +381,7 @@ namespace OFXParser
             double returnValue = 0;
             try
             {
-                returnValue = Convert.ToDouble(value.Replace('.', ','));
+                returnValue = Convert.ToDouble(value.Replace(',', '.'));
             }
             catch (Exception ex)
             {
