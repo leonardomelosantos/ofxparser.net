@@ -54,9 +54,19 @@ namespace OFXParser
                 }
                 else if (linha.StartsWith("<") && linha.EndsWith(">"))
                 {
-                    nivel++;
-                    AddTabs(resultado, nivel, true);
-                    resultado.Append(linha);
+                    //ADJUST FOR POSSIBLE (BUT NOT ALLOWED) EMPTY OFX TAGS
+                    if (linha == "<BALAMT>" || linha == "<PRINYTD>" || linha == "<PRINLTD>")
+                    {
+                        AddTabs(resultado, nivel + 1, true);
+                        resultado.Append(linha);
+                        resultado.Append(ReturnFinalTag(linha));
+                    }
+                    else
+                    {
+                        nivel++;
+                        AddTabs(resultado, nivel, true);
+                        resultado.Append(linha);
+                    }
                 }
                 else if (linha.StartsWith("<") && !linha.EndsWith(">"))
                 {
@@ -90,11 +100,11 @@ namespace OFXParser
             // Translating to XML file
             ExportToXml(ofxSourceFile, ofxSourceFile + ".xml");
 
-            // Variáveis úteis para o Parse
+            // VariÃ¡veis Ãºteis para o Parse
             String elementoSendoLido = "";
             Transaction transacaoAtual = null;
 
-            // Variávies utilizadas para a leitura do XML
+            // VariÃ¡vies utilizadas para a leitura do XML
             HeaderExtract cabecalho = new HeaderExtract();
             BankAccount conta = new BankAccount();
             Extract extrato = new Extract(cabecalho, conta, "");
