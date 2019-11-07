@@ -4,6 +4,7 @@ using System.IO;
 using System.Xml;
 using OFXParser.Core;
 using OFXParser.Entities;
+using System.Collections.Generic;
 
 namespace OFXParser
 {
@@ -174,7 +175,7 @@ namespace OFXParser
                                 transacaoAtual.Date = ConvertOfxDateToDateTime(meuXml.Value, extrato);
                                 break;
                             case "TRNAMT":
-                                transacaoAtual.TransactionValue = GetTransactionValue(meuXml.Value, extrato);
+                                transacaoAtual.TransactionValue = GetTransactionValue(meuXml.Value, extrato);                                    
                                 break;
                             case "FITID":
                                 transacaoAtual.Id = meuXml.Value;
@@ -196,6 +197,23 @@ namespace OFXParser
             finally
             {
                 meuXml.Close();
+            }
+
+            foreach (Transaction tr in extrato.Transactions)
+            {
+                if (!(new List<string> { "CREDIT", "DEBIT" }).Contains(tr.Type))
+                {
+                    switch (tr.TransactionValue > 0)
+                    {
+                        case true:
+                            tr.Type = "CREDIT";
+                            break;
+
+                        case false:
+                            tr.Type = "DEBIT";
+                            break;
+                    }
+                }
             }
 
             if ((settings.IsValidateHeader && temCabecalho == false) || 
