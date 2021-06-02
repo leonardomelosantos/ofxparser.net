@@ -16,6 +16,8 @@ namespace OFXParser.Entities
 
         public DateTime FinalDate { get; set; }
 
+        public double FinalBalance { get; set; }
+
         public IList<Transaction> Transactions { get; set; }
 
         public IList<string> ImportingErrors { get; private set; }

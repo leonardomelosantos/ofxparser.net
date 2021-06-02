@@ -195,6 +195,11 @@ namespace OFXParser
                             case "MEMO":
                                 transacaoAtual.Description = string.IsNullOrEmpty(meuXml.Value) ? "" : meuXml.Value.Trim().Replace("  ", " ");
                                 break;
+                            case "BALAMT":
+                                extrato.FinalBalance = GetTransactionValue(meuXml.Value, extrato);
+                                break;
+                                
+
                         }
                     }
                 }
@@ -386,7 +391,7 @@ namespace OFXParser
             double returnValue = 0;
             try
             {
-                returnValue = Convert.ToDouble(value.Replace('.', ','));
+                returnValue = Convert.ToDouble(value.Replace(',', '.'));
             }
             catch (Exception ex)
             {
