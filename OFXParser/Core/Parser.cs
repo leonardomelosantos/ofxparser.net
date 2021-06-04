@@ -7,23 +7,7 @@ using OFXParser.Entities;
 
 namespace OFXParser
 {
-    public enum PartDateTime
-    {
-        DAY,
-        MONTH,
-        YEAR,
-        HOUR,
-        MINUTE,
-        SECOND
-    }
-
-    public class ParserSettings
-    {
-        public bool IsValidateHeader { get; set; }
-        public bool IsValidateAccountData { get; set; }
-    }
-
-    public class Parser
+    public static class Parser
     {
         /// <summary>
         /// This method translate an OFX file to XML tags, independent of the content.
@@ -32,9 +16,9 @@ namespace OFXParser
         /// <returns>XML tags in StringBuilder object.</returns>
         private static StringBuilder TranslateToXml(String ofxSourceFile)
         {
-            StringBuilder resultado = new StringBuilder();
-            int nivel = 0;
-            String linha;
+            StringBuilder result = new StringBuilder();
+            int level = 0;
+            String line;
 
             if (!File.Exists(ofxSourceFile))
             {
@@ -42,42 +26,42 @@ namespace OFXParser
             }
 
             StreamReader sr = File.OpenText(ofxSourceFile);
-            while ((linha = sr.ReadLine()) != null)
+            while ((line = sr.ReadLine()) != null)
             {
-                linha = linha.Trim();
+                line = line.Trim();
 
-                if (linha.StartsWith("</") && linha.EndsWith(">"))
+                if (line.StartsWith("</") && line.EndsWith(">"))
                 {
-                    AddTabs(resultado, nivel, true);
-                    nivel--;
-                    resultado.Append(linha);
+                    AddTabs(result, level, true);
+                    level--;
+                    result.Append(line);
                 }
-                else if (linha.StartsWith("<") && linha.EndsWith(">"))
+                else if (line.StartsWith("<") && line.EndsWith(">"))
                 {
                     //ADJUST FOR POSSIBLE (BUT NOT ALLOWED) EMPTY OFX TAGS
-                    if (linha == "<BALAMT>" || linha == "<PRINYTD>" || linha == "<PRINLTD>")
+                    if (line == "<BALAMT>" || line == "<PRINYTD>" || line == "<PRINLTD>")
                     {
-                        AddTabs(resultado, nivel + 1, true);
-                        resultado.Append(linha);
-                        resultado.Append(ReturnFinalTag(linha));
+                        AddTabs(result, level + 1, true);
+                        result.Append(line);
+                        result.Append(ReturnFinalTag(line));
                     }
                     else
                     {
-                        nivel++;
-                        AddTabs(resultado, nivel, true);
-                        resultado.Append(linha);
+                        level++;
+                        AddTabs(result, level, true);
+                        result.Append(line);
                     }
                 }
-                else if (linha.StartsWith("<") && !linha.EndsWith(">"))
+                else if (line.StartsWith("<") && !line.EndsWith(">"))
                 {
-                    AddTabs(resultado, nivel + 1, true);
-                    resultado.Append(linha);
-                    resultado.Append(ReturnFinalTag(linha));
+                    AddTabs(result, level + 1, true);
+                    result.Append(line);
+                    result.Append(ReturnFinalTag(line));
                 }
             }
             sr.Close();
 
-            return resultado;
+            return result;
         }
 
         /// <summary>
@@ -87,141 +71,149 @@ namespace OFXParser
         /// <returns>Extract object with OFX file data.</returns>
         public static Extract GenerateExtract(String ofxSourceFile)
         {
-            return GetExtract(ofxSourceFile, new ParserSettings());
+            return GenerateExtract(ofxSourceFile, new ParserSettings());
         }
 
-        public static Extract GetExtract(String ofxSourceFile, ParserSettings settings)
-        {
-            if (settings == null) settings = new ParserSettings();
+        public static Extract GenerateExtract(String ofxSourceFile, ParserSettings settings)
+		{
+			// Translating to XML file
+			ExportToXml(ofxSourceFile, ofxSourceFile + ".xml");
+			
+            // Lendo o XML efetivamente
+			XmlTextReader xmlTextReader = new XmlTextReader(ofxSourceFile + ".xml");
 
-            Boolean temCabecalho = false;
-            Boolean temDadosConta = false;
-            
-            // Translating to XML file
-            ExportToXml(ofxSourceFile, ofxSourceFile + ".xml");
+			Extract extrato = GetExtractByXmlExported(xmlTextReader, settings);
+
+			return extrato;
+		}
+
+		private static Extract GetExtractByXmlExported(XmlTextReader xmlTextReader, ParserSettings settings)
+		{
+            if (settings == null) settings = new ParserSettings();
 
             // Variáveis úteis para o Parse
             String elementoSendoLido = "";
-            Transaction transacaoAtual = null;
+			Transaction transacaoAtual = null;
 
-            // Variávies utilizadas para a leitura do XML
-            HeaderExtract cabecalho = new HeaderExtract();
-            BankAccount conta = new BankAccount();
-            Extract extrato = new Extract(cabecalho, conta, "");
+			// Variávies utilizadas para a leitura do XML
+			HeaderExtract cabecalho = new HeaderExtract();
+			BankAccount conta = new BankAccount();
+			Extract extrato = new Extract(cabecalho, conta, "");
 
-            // Lendo o XML efetivamente
-            XmlTextReader meuXml = new XmlTextReader(ofxSourceFile + ".xml");
-            try
-            {
-                while (meuXml.Read())
-                {
-                    if (meuXml.NodeType == XmlNodeType.EndElement)
-                    {
-                        switch (meuXml.Name)
-                        {
-                            case "STMTTRN":
-                                if (transacaoAtual != null)
-                                {
-                                    extrato.AddTransaction(transacaoAtual);
-                                    transacaoAtual = null;
-                                }
-                                break;
-                        }
-                    }
-                    if (meuXml.NodeType == XmlNodeType.Element)
-                    {
-                        elementoSendoLido = meuXml.Name;
+			Boolean temCabecalho = false;
+			Boolean temDadosConta = false;
+			try
+			{
+				while (xmlTextReader.Read())
+				{
+					if (xmlTextReader.NodeType == XmlNodeType.EndElement)
+					{
+						switch (xmlTextReader.Name)
+						{
+							case "STMTTRN":
+								if (transacaoAtual != null)
+								{
+									extrato.AddTransaction(transacaoAtual);
+									transacaoAtual = null;
+								}
+								break;
+						}
+					}
+					if (xmlTextReader.NodeType == XmlNodeType.Element)
+					{
+						elementoSendoLido = xmlTextReader.Name;
 
-                        switch (elementoSendoLido)
-                        {
-                            case "STMTTRN":
-                                transacaoAtual = new Transaction();
-                                break;
-                        }
-                    }
-                    if (meuXml.NodeType == XmlNodeType.Text)
-                    {
-                        switch (elementoSendoLido)
-                        {
-                            case "DTSERVER":
-                                cabecalho.ServerDate = ConvertOfxDateToDateTime(meuXml.Value, extrato);
-                                temCabecalho = true;
-                                break;
-                            case "LANGUAGE":
-                                cabecalho.Language = meuXml.Value;
-                                temCabecalho = true;
-                                break;
-                            case "ORG":
-                                cabecalho.BankName = meuXml.Value;
-                                temCabecalho = true;
-                                break;
-                            case "DTSTART":
-                                extrato.InitialDate = ConvertOfxDateToDateTime(meuXml.Value, extrato);
-                                break;
-                            case "DTEND":
-                                extrato.FinalDate = ConvertOfxDateToDateTime(meuXml.Value, extrato);
-                                break;
-                            case "BANKID":
-                                conta.Bank = new Bank(GetBankId(meuXml.Value, extrato), "");
-                                temDadosConta = true;
-                                break;
-                            case "BRANCHID":
-                                conta.AgencyCode = meuXml.Value;
-                                temDadosConta = true;
-                                break;
-                            case "ACCTID":
-                                conta.AccountCode = meuXml.Value;
-                                temDadosConta = true;
-                                break;
-                            case "ACCTTYPE":
-                                conta.Type = meuXml.Value;
-                                temDadosConta = true;
-                                break;
-                            case "TRNTYPE":
-                                transacaoAtual.Type = meuXml.Value;
-                                break;
-                            case "DTPOSTED":
-                                transacaoAtual.Date = ConvertOfxDateToDateTime(meuXml.Value, extrato);
-                                break;
-                            case "TRNAMT":
-                                transacaoAtual.TransactionValue = GetTransactionValue(meuXml.Value, extrato);
-                                break;
-                            case "FITID":
-                                transacaoAtual.Id = meuXml.Value;
-                                break;
-                            case "CHECKNUM":
-                                transacaoAtual.Checksum = Convert.ToInt64(meuXml.Value);
-                                break;
-                            case "MEMO":
-                                transacaoAtual.Description = string.IsNullOrEmpty(meuXml.Value) ? "" : meuXml.Value.Trim().Replace("  ", " ");
-                                break;
-                        }
-                    }
-                }
-            }
-            catch (XmlException xe)
-            {
-                throw new OFXParserException("Invalid OFX file!");
-            }
-            finally
-            {
-                meuXml.Close();
-            }
+						switch (elementoSendoLido)
+						{
+							case "STMTTRN":
+								transacaoAtual = new Transaction();
+								break;
+						}
+					}
+					if (xmlTextReader.NodeType == XmlNodeType.Text)
+					{
+						switch (elementoSendoLido)
+						{
+							case "DTSERVER":
+								cabecalho.ServerDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extrato);
+								temCabecalho = true;
+								break;
+							case "LANGUAGE":
+								cabecalho.Language = xmlTextReader.Value;
+								temCabecalho = true;
+								break;
+							case "ORG":
+								cabecalho.BankName = xmlTextReader.Value;
+								temCabecalho = true;
+								break;
+							case "DTSTART":
+								extrato.InitialDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extrato);
+								break;
+							case "DTEND":
+								extrato.FinalDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extrato);
+								break;
+							case "BANKID":
+								conta.Bank = new Bank(GetBankId(xmlTextReader.Value, extrato), "");
+								temDadosConta = true;
+								break;
+							case "BRANCHID":
+								conta.AgencyCode = xmlTextReader.Value;
+								temDadosConta = true;
+								break;
+							case "ACCTID":
+								conta.AccountCode = xmlTextReader.Value;
+								temDadosConta = true;
+								break;
+							case "ACCTTYPE":
+								conta.Type = xmlTextReader.Value;
+								temDadosConta = true;
+								break;
+							case "TRNTYPE":
+								if (transacaoAtual != null) transacaoAtual.Type = xmlTextReader.Value;
+								break;
+							case "DTPOSTED":
+								if (transacaoAtual != null) transacaoAtual.Date = ConvertOfxDateToDateTime(xmlTextReader.Value, extrato);
+								break;
+							case "TRNAMT":
+								if (transacaoAtual != null) transacaoAtual.TransactionValue = GetTransactionValue(xmlTextReader.Value, extrato, settings);
+								break;
+							case "FITID":
+								if (transacaoAtual != null) transacaoAtual.Id = xmlTextReader.Value;
+								break;
+							case "CHECKNUM":
+								if (transacaoAtual != null) transacaoAtual.Checksum = Convert.ToInt64(xmlTextReader.Value);
+								break;
+							case "MEMO":
+								if (transacaoAtual != null) transacaoAtual.Description = string.IsNullOrEmpty(xmlTextReader.Value) ? "" : xmlTextReader.Value.Trim().Replace("  ", " ");
+								break;
+						}
+					}
+				}
+			}
+			catch (XmlException xe)
+			{
+				throw new OFXParserException("Invalid OFX file!");
+			}
+			finally
+			{
+				xmlTextReader.Close();
+			}
 
-            if ((settings.IsValidateHeader && temCabecalho == false) || 
-                (settings.IsValidateAccountData && temDadosConta == false))
-            {
-                throw new OFXParserException("Invalid OFX file!");
-            }
-            return extrato;
-        }
+			if ((settings.IsValidateHeader && temCabecalho == false) ||
+				(settings.IsValidateAccountData && temDadosConta == false))
+			{
+				throw new OFXParserException("Invalid OFX file!");
+			}
 
-        /// <summary>
-        /// This method translate an OFX file to XML file, independent of the content.
-        /// </summary>
-        /// <param name="ofxSourceFile">Path of OFX source file</param>
-        /// <param name="xmlNewFile">Path of the XML file, internally generated.</param>
-        private static void ExportToXml(String ofxSourceFile, String xmlNewFile)
+			return extrato;
+		}
+
+		/// <summary>
+		/// This method translate an OFX file to XML file, independent of the content.
+		/// </summary>
+		/// <param name="ofxSourceFile">Path of OFX source file</param>
+		/// <param name="xmlNewFile">Path of the XML file, internally generated.</param>
+		private static void ExportToXml(String ofxSourceFile, String xmlNewFile)
         {
             if (System.IO.File.Exists(ofxSourceFile)) 
             {
@@ -258,7 +250,7 @@ namespace OFXParser
         /// <returns>String with ending tag.</returns>
         private static String ReturnFinalTag(String content)
         {
-            String returnFinal = "";
+            String finalReturn = "";
 
             if ((content.IndexOf("<") != -1) && (content.IndexOf(">") != -1))
             {
@@ -266,12 +258,12 @@ namespace OFXParser
                 int position2 = content.IndexOf(">");
                 if ((position2 - position1) > 2)
                 {
-                    returnFinal = content.Substring(position1, (position2 - position1) + 1);
-                    returnFinal = returnFinal.Replace("<", "</");
+                    finalReturn = content.Substring(position1, (position2 - position1) + 1);
+                    finalReturn = finalReturn.Replace("<", "</");
                 }
             }
 
-            return returnFinal;
+            return finalReturn;
         }
 
         /// <summary>
@@ -381,16 +373,23 @@ namespace OFXParser
             return bankId;
         }
 
-        private static double GetTransactionValue(string value, Extract extract)
+        private static double GetTransactionValue(string value, Extract extract, ParserSettings settings)
         {
             double returnValue = 0;
             try
             {
-                returnValue = Convert.ToDouble(value.Replace('.', ','));
+                if (settings.CustomConverterCurrency != null)
+				{
+                    returnValue = settings.CustomConverterCurrency.Invoke(value);
+                }
+                else
+				{
+                    returnValue = Convert.ToDouble(value.Replace('.', ','));
+                }
             }
             catch (Exception ex)
             {
-                extract.ImportingErrors.Add(string.Format("Invalid transaction value: {0}", value));
+                extract.ImportingErrors.Add(string.Format("Invalid transaction value/amount: {0}", value));
             }
             return returnValue;
         }

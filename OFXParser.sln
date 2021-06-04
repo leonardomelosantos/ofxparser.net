@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31313.79
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OFXParser", "OFXParser\OFXParser.csproj", "{52CC71AC-CFAA-4AB1-A29E-23B062852D2E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OFXParser.NuGet.Packager", "OFXParser.NuGet.Packager\OFXParser.NuGet.Packager.csproj", "{0451BAEF-DF2E-4B98-8644-94EE9415E389}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OFXParser.Test", "OFXParser.Test\OFXParser.Test.csproj", "{6B64A3A6-8EED-491D-9FA7-268B4BFCCF75}"
 EndProject
@@ -19,10 +17,6 @@ Global
 		{52CC71AC-CFAA-4AB1-A29E-23B062852D2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{52CC71AC-CFAA-4AB1-A29E-23B062852D2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{52CC71AC-CFAA-4AB1-A29E-23B062852D2E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0451BAEF-DF2E-4B98-8644-94EE9415E389}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0451BAEF-DF2E-4B98-8644-94EE9415E389}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0451BAEF-DF2E-4B98-8644-94EE9415E389}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0451BAEF-DF2E-4B98-8644-94EE9415E389}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6B64A3A6-8EED-491D-9FA7-268B4BFCCF75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6B64A3A6-8EED-491D-9FA7-268B4BFCCF75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B64A3A6-8EED-491D-9FA7-268B4BFCCF75}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -30,5 +24,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EA544FA7-1BDE-4F3E-93FA-055EA382CFD9}
 	EndGlobalSection
 EndGlobal
