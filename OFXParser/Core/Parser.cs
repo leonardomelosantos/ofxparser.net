@@ -73,144 +73,144 @@ namespace OFXParser
         }
 
         public static Extract GenerateExtract(string ofxSourceFile, ParserSettings settings)
-		{
-			ExportToXml(ofxSourceFile, ofxSourceFile + ".xml"); // Translating to XML file
+        {
+            ExportToXml(ofxSourceFile, ofxSourceFile + ".xml"); // Translating to XML file
 
             XmlTextReader xmlTextReader = new XmlTextReader(ofxSourceFile + ".xml"); // Reading XML
 
             return GetExtractByXmlExported(xmlTextReader, settings);
         }
 
-		private static Extract GetExtractByXmlExported(XmlTextReader xmlTextReader, ParserSettings settings)
-		{
-            if (settings == null) 
+        private static Extract GetExtractByXmlExported(XmlTextReader xmlTextReader, ParserSettings settings)
+        {
+            if (settings == null)
                 settings = new ParserSettings();
 
             // Variables used by Parser
             string currentElement = "";
-			Transaction currentTransaction = null;
+            Transaction currentTransaction = null;
 
-			// Variables used to read XML
-			HeaderExtract header = new HeaderExtract();
-			BankAccount bankAccount = new BankAccount();
-			Extract extract = new Extract(header, bankAccount, "");
+            // Variables used to read XML
+            HeaderExtract header = new HeaderExtract();
+            BankAccount bankAccount = new BankAccount();
+            Extract extract = new Extract(header, bankAccount, "");
 
-			bool hasHeader = false;
-			bool hasAccountInfoData = false;
-			try
-			{
-				while (xmlTextReader.Read())
-				{
-					if (xmlTextReader.NodeType == XmlNodeType.EndElement)
-					{
-						switch (xmlTextReader.Name)
-						{
-							case "STMTTRN":
-								if (currentTransaction != null)
-								{
-									extract.AddTransaction(currentTransaction);
-									currentTransaction = null;
-								}
-								break;
-						}
-					}
-					if (xmlTextReader.NodeType == XmlNodeType.Element)
-					{
-						currentElement = xmlTextReader.Name;
+            bool hasHeader = false;
+            bool hasAccountInfoData = false;
+            try
+            {
+                while (xmlTextReader.Read())
+                {
+                    if (xmlTextReader.NodeType == XmlNodeType.EndElement)
+                    {
+                        switch (xmlTextReader.Name)
+                        {
+                            case "STMTTRN":
+                                if (currentTransaction != null)
+                                {
+                                    extract.AddTransaction(currentTransaction);
+                                    currentTransaction = null;
+                                }
+                                break;
+                        }
+                    }
+                    if (xmlTextReader.NodeType == XmlNodeType.Element)
+                    {
+                        currentElement = xmlTextReader.Name;
 
-						switch (currentElement)
-						{
-							case "STMTTRN":
-								currentTransaction = new Transaction();
-								break;
-						}
-					}
-					if (xmlTextReader.NodeType == XmlNodeType.Text)
-					{
-						switch (currentElement)
-						{
-							case "DTSERVER":
-								header.ServerDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
-								hasHeader = true;
-								break;
-							case "LANGUAGE":
-								header.Language = xmlTextReader.Value;
-								hasHeader = true;
-								break;
-							case "ORG":
-								header.BankName = xmlTextReader.Value;
-								hasHeader = true;
-								break;
-							case "DTSTART":
-								extract.InitialDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
-								break;
-							case "DTEND":
-								extract.FinalDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
-								break;
-							case "BANKID":
-								bankAccount.Bank = new Bank(GetBankId(xmlTextReader.Value, extract), "");
-								hasAccountInfoData = true;
-								break;
-							case "BRANCHID":
-								bankAccount.AgencyCode = xmlTextReader.Value;
-								hasAccountInfoData = true;
-								break;
-							case "ACCTID":
-								bankAccount.AccountCode = xmlTextReader.Value;
-								hasAccountInfoData = true;
-								break;
-							case "ACCTTYPE":
-								bankAccount.Type = xmlTextReader.Value;
-								hasAccountInfoData = true;
-								break;
-							case "TRNTYPE":
-								if (currentTransaction != null) currentTransaction.Type = xmlTextReader.Value;
-								break;
-							case "DTPOSTED":
-								if (currentTransaction != null) currentTransaction.Date = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
-								break;
-							case "TRNAMT":
-								if (currentTransaction != null) currentTransaction.TransactionValue = GetTransactionValue(xmlTextReader.Value, extract, settings);
-								break;
-							case "FITID":
-								if (currentTransaction != null) currentTransaction.Id = xmlTextReader.Value;
-								break;
-							case "CHECKNUM":
-								if (currentTransaction != null) currentTransaction.Checksum = Convert.ToInt64(xmlTextReader.Value);
-								break;
-							case "MEMO":
-								if (currentTransaction != null) currentTransaction.Description = string.IsNullOrEmpty(xmlTextReader.Value) ? "" : xmlTextReader.Value.Trim().Replace("  ", " ");
-								break;
-						}
-					}
-				}
-			}
-			catch (XmlException xe)
-			{
-				throw new OFXParserException($"Invalid OFX file! Internal message: {xe.Message}");
-			}
-			finally
-			{
-				xmlTextReader.Close();
-			}
+                        switch (currentElement)
+                        {
+                            case "STMTTRN":
+                                currentTransaction = new Transaction();
+                                break;
+                        }
+                    }
+                    if (xmlTextReader.NodeType == XmlNodeType.Text)
+                    {
+                        switch (currentElement)
+                        {
+                            case "DTSERVER":
+                                header.ServerDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
+                                hasHeader = true;
+                                break;
+                            case "LANGUAGE":
+                                header.Language = xmlTextReader.Value;
+                                hasHeader = true;
+                                break;
+                            case "ORG":
+                                header.BankName = xmlTextReader.Value;
+                                hasHeader = true;
+                                break;
+                            case "DTSTART":
+                                extract.InitialDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
+                                break;
+                            case "DTEND":
+                                extract.FinalDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
+                                break;
+                            case "BANKID":
+                                bankAccount.Bank = new Bank(GetBankId(xmlTextReader.Value, extract), "");
+                                hasAccountInfoData = true;
+                                break;
+                            case "BRANCHID":
+                                bankAccount.AgencyCode = xmlTextReader.Value;
+                                hasAccountInfoData = true;
+                                break;
+                            case "ACCTID":
+                                bankAccount.AccountCode = xmlTextReader.Value;
+                                hasAccountInfoData = true;
+                                break;
+                            case "ACCTTYPE":
+                                bankAccount.Type = xmlTextReader.Value;
+                                hasAccountInfoData = true;
+                                break;
+                            case "TRNTYPE":
+                                if (currentTransaction != null) currentTransaction.Type = xmlTextReader.Value;
+                                break;
+                            case "DTPOSTED":
+                                if (currentTransaction != null) currentTransaction.Date = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
+                                break;
+                            case "TRNAMT":
+                                if (currentTransaction != null) currentTransaction.TransactionValue = GetTransactionValue(xmlTextReader.Value, extract, settings);
+                                break;
+                            case "FITID":
+                                if (currentTransaction != null) currentTransaction.Id = xmlTextReader.Value;
+                                break;
+                            case "CHECKNUM":
+                                if (currentTransaction != null) currentTransaction.Checksum = Convert.ToInt64(xmlTextReader.Value);
+                                break;
+                            case "MEMO":
+                                if (currentTransaction != null) currentTransaction.Description = string.IsNullOrEmpty(xmlTextReader.Value) ? "" : xmlTextReader.Value.Trim().Replace("  ", " ");
+                                break;
+                        }
+                    }
+                }
+            }
+            catch (XmlException xe)
+            {
+                throw new OFXParserException($"Invalid OFX file! Internal message: {xe.Message}");
+            }
+            finally
+            {
+                xmlTextReader.Close();
+            }
 
-			if ((settings.IsValidateHeader && hasHeader == false) ||
-				(settings.IsValidateAccountData && hasAccountInfoData == false))
-			{
-				throw new OFXParserException("Invalid OFX file!");
-			}
+            if ((settings.IsValidateHeader && hasHeader == false) ||
+                (settings.IsValidateAccountData && hasAccountInfoData == false))
+            {
+                throw new OFXParserException("Invalid OFX file!");
+            }
 
-			return extract;
-		}
+            return extract;
+        }
 
-		/// <summary>
-		/// This method translate an OFX file to XML file, independent of the content.
-		/// </summary>
-		/// <param name="ofxSourceFile">Path of OFX source file</param>
-		/// <param name="xmlNewFile">Path of the XML file, internally generated.</param>
-		private static void ExportToXml(string ofxSourceFile, string xmlNewFile)
+        /// <summary>
+        /// This method translate an OFX file to XML file, independent of the content.
+        /// </summary>
+        /// <param name="ofxSourceFile">Path of OFX source file</param>
+        /// <param name="xmlNewFile">Path of the XML file, internally generated.</param>
+        private static void ExportToXml(string ofxSourceFile, string xmlNewFile)
         {
-            if (System.IO.File.Exists(ofxSourceFile)) 
+            if (System.IO.File.Exists(ofxSourceFile))
             {
                 if (xmlNewFile.ToLower().EndsWith(".xml"))
                 {
@@ -232,8 +232,8 @@ namespace OFXParser
                 else
                 {
                     throw new ArgumentException("Name of new XML file is not valid: " + xmlNewFile);
-                }                
-            } 
+                }
+            }
             else
             {
                 throw new FileNotFoundException("OFX source file not found: " + ofxSourceFile);
@@ -291,29 +291,29 @@ namespace OFXParser
             {
                 return int.Parse(ofxDate.Substring(0, 4));
 
-            } 
+            }
             else if (partDateTime == PartDateTime.MONTH)
             {
                 return int.Parse(ofxDate.Substring(4, 2));
 
-            } 
+            }
             else if (partDateTime == PartDateTime.DAY)
             {
                 return int.Parse(ofxDate.Substring(6, 2));
 
-            } 
+            }
             else if (partDateTime == PartDateTime.HOUR)
             {
                 if (ofxDate.Length >= 10)
                     return int.Parse(ofxDate.Substring(8, 2));
 
-            } 
+            }
             else if (partDateTime == PartDateTime.MINUTE)
             {
                 if (ofxDate.Length >= 12)
                     return int.Parse(ofxDate.Substring(10, 2));
 
-            } 
+            }
             else if (partDateTime == PartDateTime.SECOND)
             {
                 if (ofxDate.Length >= 14)
@@ -329,7 +329,8 @@ namespace OFXParser
         /// <param name="ofxDate"></param>
         /// <param name="extract"></param>
         /// <returns></returns>
-        private static DateTime ConvertOfxDateToDateTime(String ofxDate, Extract extract) {
+        private static DateTime ConvertOfxDateToDateTime(String ofxDate, Extract extract)
+        {
             DateTime dateTimeReturned = DateTime.MinValue;
             try
             {

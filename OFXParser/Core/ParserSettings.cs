@@ -11,5 +11,5 @@ namespace OFXParser.Core
         /// Method reference to execute your custom convertion strategy.
         /// </summary>
         public Func<string, double> CustomConverterCurrency { get; set; }
-	}
+    }
 }
