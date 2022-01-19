@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace OFXParser.Core
 {
@@ -8,9 +6,9 @@ namespace OFXParser.Core
     {
         public bool IsValidateHeader { get; set; }
         public bool IsValidateAccountData { get; set; }
-		
+
         /// <summary>
-        /// Method reference to execute your cutom strategy convertion.
+        /// Method reference to execute your custom convertion strategy.
         /// </summary>
         public Func<string, double> CustomConverterCurrency { get; set; }
 	}
