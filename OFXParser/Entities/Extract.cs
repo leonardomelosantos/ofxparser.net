@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace OFXParser.Entities
@@ -10,7 +9,7 @@ namespace OFXParser.Entities
 
         public BankAccount BankAccount { get; set; }
 
-        public String Status { get; set; }
+        public string Status { get; set; }
 
         public DateTime InitialDate { get; set; }
 
@@ -21,7 +20,7 @@ namespace OFXParser.Entities
         public IList<string> ImportingErrors { get; private set; }
 
         public Extract(HeaderExtract header, BankAccount bankAccount,
-            String status, DateTime initialDate, DateTime finalDate)
+            string status, DateTime initialDate, DateTime finalDate)
         {
             Init(header, bankAccount, status);
 
@@ -29,13 +28,12 @@ namespace OFXParser.Entities
             this.FinalDate = finalDate;
         }
 
-        public Extract(HeaderExtract header, BankAccount bankAccount,
-            String status)
+        public Extract(HeaderExtract header, BankAccount bankAccount, string status)
         {
             Init(header, bankAccount, status);
         }
 
-        private void Init(HeaderExtract header, BankAccount bankAccount, String status)
+        private void Init(HeaderExtract header, BankAccount bankAccount, string status)
         {
             this.Header = header;
             this.BankAccount = bankAccount;
@@ -47,9 +45,8 @@ namespace OFXParser.Entities
         public void AddTransaction(Transaction transaction)
         {
             if (this.Transactions == null)
-            {
                 this.Transactions = new List<Transaction>();
-            }
+
             this.Transactions.Add(transaction);
         }
     }
