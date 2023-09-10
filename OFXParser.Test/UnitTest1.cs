@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OFXParser.Core;
 using OFXParser.Entities;
 
@@ -11,7 +10,7 @@ namespace OFXParser.Test
         [TestMethod]
         public void TestMethod1()
         {
-            Extract extraxt = OFXParser.Parser.GenerateExtract("E:\\extract.ofx", new ParserSettings());
+            Extract extract = OFXParser.Parser.GenerateExtract("E:\\extract.ofx", new ParserSettings());
         }
     }
 }

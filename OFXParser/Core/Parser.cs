@@ -1,20 +1,55 @@
-using System;
-using System.Text;
-using System.IO;
-using System.Xml;
 using OFXParser.Core;
 using OFXParser.Entities;
+using System;
+using System.IO;
+using System.Text;
+using System.Xml;
 
 namespace OFXParser
 {
     public static class Parser
     {
+        #region Constants
+
+        private const string MESSAGE_BANK_ID_ISNT_NUMERIC_VALUE = "Bank id isn't numeric value: {0}";
+        private const string MESSAGE_INVALID_DATETIME = "Invalid datetime {0}";
+        private const string MESSAGE_INVALID_TRANSACTION_VALUE_AMOUNT = "Invalid transaction value/amount: {0}";
+        private const string MESSAGE_OFX_FILE_NOT_FOUND = "OFX source file not found: {0}";
+        private const string MESSAGE_NAME_NEW_FILE_INVALID = "Name of new XML file is not valid: {0}";
+
+        #endregion
+
+        #region Public methods
+
+        /// <summary>
+        /// Extract object with OFX file data. This method checks the OFX file.
+        /// </summary>
+        /// <param name="ofxSourceFile">Full path of OFX file</param>
+        /// <returns>Extract object with OFX file data.</returns>
+        public static Extract GenerateExtract(string ofxSourceFile)
+        {
+            return GenerateExtract(ofxSourceFile, new ParserSettings());
+        }
+
+        public static Extract GenerateExtract(string ofxSourceFile, ParserSettings settings)
+        {
+            ExportOfxToXml(ofxSourceFile, ofxSourceFile + ".xml");
+
+            XmlTextReader xmlTextReader = new XmlTextReader(ofxSourceFile + ".xml");
+
+            return GetExtractByXmlExported(xmlTextReader, settings);
+        }
+
+        #endregion
+
+        #region Private methods
+
         /// <summary>
         /// This method translate an OFX file to XML tags, independent of the content.
         /// </summary>
         /// <param name="ofxSourceFile">OFX source file</param>
         /// <returns>XML tags in StringBuilder object.</returns>
-        private static StringBuilder TranslateToXml(string ofxSourceFile)
+        private static StringBuilder TranslateOfxToXml(string ofxSourceFile)
         {
             StringBuilder result = new StringBuilder();
             int level = 0;
@@ -23,8 +58,8 @@ namespace OFXParser
             if (!File.Exists(ofxSourceFile))
                 throw new FileNotFoundException("OFX source file not found: " + ofxSourceFile);
 
-            StreamReader sr = File.OpenText(ofxSourceFile);
-            while ((line = sr.ReadLine()) != null)
+            StreamReader streamReader = File.OpenText(ofxSourceFile);
+            while ((line = streamReader.ReadLine()) != null)
             {
                 line = line.Trim();
 
@@ -57,28 +92,9 @@ namespace OFXParser
                     result.Append(ReturnFinalTag(line));
                 }
             }
-            sr.Close();
+            streamReader.Close();
 
             return result;
-        }
-
-        /// <summary>
-        /// Extract object with OFX file data. This method checks the OFX file.
-        /// </summary>
-        /// <param name="ofxSourceFile">Full path of OFX file</param>
-        /// <returns>Extract object with OFX file data.</returns>
-        public static Extract GenerateExtract(string ofxSourceFile)
-        {
-            return GenerateExtract(ofxSourceFile, new ParserSettings());
-        }
-
-        public static Extract GenerateExtract(string ofxSourceFile, ParserSettings settings)
-        {
-            ExportToXml(ofxSourceFile, ofxSourceFile + ".xml"); // Translating to XML file
-
-            XmlTextReader xmlTextReader = new XmlTextReader(ofxSourceFile + ".xml"); // Reading XML
-
-            return GetExtractByXmlExported(xmlTextReader, settings);
         }
 
         private static Extract GetExtractByXmlExported(XmlTextReader xmlTextReader, ParserSettings settings)
@@ -87,7 +103,7 @@ namespace OFXParser
                 settings = new ParserSettings();
 
             // Variables used by Parser
-            string currentElement = "";
+            string currentElement = string.Empty;
             Transaction currentTransaction = null;
 
             // Variables used to read XML
@@ -148,7 +164,7 @@ namespace OFXParser
                                 extract.FinalDate = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
                                 break;
                             case "BANKID":
-                                bankAccount.Bank = new Bank(GetBankId(xmlTextReader.Value, extract), "");
+                                bankAccount.Bank = new Bank(TryGetBankId(xmlTextReader.Value, extract), string.Empty);
                                 hasAccountInfoData = true;
                                 break;
                             case "BRANCHID":
@@ -164,22 +180,40 @@ namespace OFXParser
                                 hasAccountInfoData = true;
                                 break;
                             case "TRNTYPE":
-                                if (currentTransaction != null) currentTransaction.Type = xmlTextReader.Value;
+                                if (currentTransaction != null)
+                                {
+                                    currentTransaction.Type = xmlTextReader.Value;
+                                }
                                 break;
                             case "DTPOSTED":
-                                if (currentTransaction != null) currentTransaction.Date = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
+                                if (currentTransaction != null)
+                                {
+                                    currentTransaction.Date = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
+                                }
                                 break;
                             case "TRNAMT":
-                                if (currentTransaction != null) currentTransaction.TransactionValue = GetTransactionValue(xmlTextReader.Value, extract, settings);
+                                if (currentTransaction != null)
+                                {
+                                    currentTransaction.TransactionValue = GetTransactionValue(xmlTextReader.Value, extract, settings);
+                                }
                                 break;
                             case "FITID":
-                                if (currentTransaction != null) currentTransaction.Id = xmlTextReader.Value;
+                                if (currentTransaction != null)
+                                {
+                                    currentTransaction.Id = xmlTextReader.Value;
+                                }
                                 break;
                             case "CHECKNUM":
-                                if (currentTransaction != null) currentTransaction.Checksum = Convert.ToInt64(xmlTextReader.Value);
+                                if (currentTransaction != null)
+                                {
+                                    currentTransaction.Checksum = Convert.ToInt64(xmlTextReader.Value);
+                                }
                                 break;
                             case "MEMO":
-                                if (currentTransaction != null) currentTransaction.Description = string.IsNullOrEmpty(xmlTextReader.Value) ? "" : xmlTextReader.Value.Trim().Replace("  ", " ");
+                                if (currentTransaction != null)
+                                {
+                                    currentTransaction.Description = string.IsNullOrEmpty(xmlTextReader.Value) ? string.Empty : xmlTextReader.Value.Trim().Replace("  ", " ");
+                                }
                                 break;
                         }
                     }
@@ -194,8 +228,8 @@ namespace OFXParser
                 xmlTextReader.Close();
             }
 
-            if ((settings.IsValidateHeader && hasHeader == false) ||
-                (settings.IsValidateAccountData && hasAccountInfoData == false))
+            if ((settings.IsValidateHeader && !hasHeader) ||
+                (settings.IsValidateAccountData && !hasAccountInfoData))
             {
                 throw new OFXParserException("Invalid OFX file!");
             }
@@ -208,36 +242,35 @@ namespace OFXParser
         /// </summary>
         /// <param name="ofxSourceFile">Path of OFX source file</param>
         /// <param name="xmlNewFile">Path of the XML file, internally generated.</param>
-        private static void ExportToXml(string ofxSourceFile, string xmlNewFile)
+        private static void ExportOfxToXml(string ofxSourceFile, string xmlNewFile)
         {
-            if (System.IO.File.Exists(ofxSourceFile))
+            if (!System.IO.File.Exists(ofxSourceFile))
             {
-                if (xmlNewFile.ToLower().EndsWith(".xml"))
-                {
-                    // Translating the OFX file to XML format
-                    StringBuilder ofxTranslated = TranslateToXml(ofxSourceFile);
-
-                    // Verifying if target file exists
-                    if (System.IO.File.Exists(xmlNewFile))
-                    {
-                        System.IO.File.Delete(xmlNewFile);
-                    }
-
-                    // Writing data into target file
-                    StreamWriter sw = File.CreateText(xmlNewFile);
-                    sw.WriteLine(@"<?xml version=""1.0""?>");
-                    sw.WriteLine(ofxTranslated.ToString());
-                    sw.Close();
-                }
-                else
-                {
-                    throw new ArgumentException("Name of new XML file is not valid: " + xmlNewFile);
-                }
+                throw new FileNotFoundException(string.Format(MESSAGE_OFX_FILE_NOT_FOUND, ofxSourceFile));
             }
-            else
+
+            if (!xmlNewFile.ToLower().EndsWith(".xml"))
             {
-                throw new FileNotFoundException("OFX source file not found: " + ofxSourceFile);
+                throw new ArgumentException(string.Format(MESSAGE_NAME_NEW_FILE_INVALID, xmlNewFile));
             }
+
+            StringBuilder ofxTranslated = TranslateOfxToXml(ofxSourceFile);
+
+            WriteCreatedXmlIntoTargetInternalFile(xmlNewFile, ofxTranslated);
+        }
+
+        private static void WriteCreatedXmlIntoTargetInternalFile(string xmlNewFile, StringBuilder ofxTranslated)
+        {
+            // Verifying if target file exists
+            if (System.IO.File.Exists(xmlNewFile))
+            {
+                System.IO.File.Delete(xmlNewFile);
+            }
+
+            StreamWriter sw = File.CreateText(xmlNewFile);
+            sw.WriteLine(@"<?xml version=""1.0""?>");
+            sw.WriteLine(ofxTranslated.ToString());
+            sw.Close();
         }
 
         /// <summary>
@@ -247,7 +280,7 @@ namespace OFXParser
         /// <returns>String with ending tag.</returns>
         private static string ReturnFinalTag(string content)
         {
-            string finalTagReturn = "";
+            string finalTagReturn = string.Empty;
 
             if ((content.IndexOf("<") != -1) && (content.IndexOf(">") != -1))
             {
@@ -302,22 +335,19 @@ namespace OFXParser
                 return int.Parse(ofxDate.Substring(6, 2));
 
             }
-            else if (partDateTime == PartDateTime.HOUR)
+            else if (partDateTime == PartDateTime.HOUR && ofxDate.Length >= 10)
             {
-                if (ofxDate.Length >= 10)
-                    return int.Parse(ofxDate.Substring(8, 2));
+                return int.Parse(ofxDate.Substring(8, 2));
 
             }
-            else if (partDateTime == PartDateTime.MINUTE)
+            else if (partDateTime == PartDateTime.MINUTE && ofxDate.Length >= 12)
             {
-                if (ofxDate.Length >= 12)
-                    return int.Parse(ofxDate.Substring(10, 2));
+                return int.Parse(ofxDate.Substring(10, 2));
 
             }
-            else if (partDateTime == PartDateTime.SECOND)
+            else if (partDateTime == PartDateTime.SECOND && ofxDate.Length >= 14)
             {
-                if (ofxDate.Length >= 14)
-                    return int.Parse(ofxDate.Substring(12, 2));
+                return int.Parse(ofxDate.Substring(12, 2));
 
             }
             return 0;
@@ -345,17 +375,17 @@ namespace OFXParser
             }
             catch (Exception)
             {
-                extract.ImportingErrors.Add(string.Format("Invalid datetime {0}", ofxDate));
+                extract.ImportingErrors.Add(string.Format(MESSAGE_INVALID_DATETIME, ofxDate));
             }
             return dateTimeReturned;
         }
 
-        private static int GetBankId(string value, Extract extract)
+        private static int TryGetBankId(string value, Extract extract)
         {
             if (int.TryParse(value, out int bankId))
                 return bankId;
 
-            extract.ImportingErrors.Add(string.Format("Bank id isn't numeric value: {0}", value));
+            extract.ImportingErrors.Add(string.Format(MESSAGE_BANK_ID_ISNT_NUMERIC_VALUE, value));
             return 0;
         }
 
@@ -370,9 +400,11 @@ namespace OFXParser
             }
             catch (Exception)
             {
-                extract.ImportingErrors.Add(string.Format("Invalid transaction value/amount: {0}", value));
+                extract.ImportingErrors.Add(string.Format(MESSAGE_INVALID_TRANSACTION_VALUE_AMOUNT, value));
             }
             return 0;
         }
+
+        #endregion
     }
 }
