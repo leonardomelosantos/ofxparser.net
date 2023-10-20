@@ -28,13 +28,13 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-
 - task: NuGetCommand@2
   inputs:
     command: 'pack'
-    packagesToPack: '**/*.csproj'
+    packagesToPack: '**/Package.nuspec'
     versioningScheme: 'off'
-
+    includeSymbols: true
+    toolPackage: true
 - task: NuGetCommand@2
   inputs:
     command: 'push'
