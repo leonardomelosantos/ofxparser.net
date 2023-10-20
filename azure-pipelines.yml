@@ -32,7 +32,7 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'pack'
-    packagesToPack: '**/OFXParser.csproj'
+    packagesToPack: '**/Package.nuspec'
     versioningScheme: 'off'
 
 - task: NuGetCommand@2
