@@ -31,10 +31,9 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'pack'
-    packagesToPack: '**/Package.nuspec'
+    packagesToPack: '**/OFXParser.csproj'
     versioningScheme: 'off'
-    includeSymbols: true
-    toolPackage: true
+
 - task: NuGetCommand@2
   inputs:
     command: 'push'
