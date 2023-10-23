@@ -1,16 +1,16 @@
-# ofxparser.net
-Biblioteca desenvolvida em C# que traduz arquivos OFX e gera a instância de uma classe que representa o arquivo.
+# Overview
+Library developed with C# that read and translate OFX files (financial files), like a parser to help your own C# application. It's possible download this lib by using Nuget.org.
 
-Exemplo de código:
+Example:
 
 ```
-string caminhoDoArquivoOFX = "D:\\data\\meuArquivo.ofx";
-Extract extratoBancario = OFXParser.Parser.GenerateExtract(caminhoDoArquivoOFX);
-if (extratoBancario != null)
+string pathOFX = "D:\\data\\MyFile.ofx";
+Extract ofxParsed = OFXParser.Parser.GenerateExtract(pathOFX);
+if (ofxParsed != null)
 {
-    foreach (var transacao in extratoBancario.Transactions)
+    foreach (var transaction in ofxParsed.Transactions)
     {
-       // Fazer alguma coisa com a transação.    
+       // Do something with the transaction    
     }
 }
 ```
