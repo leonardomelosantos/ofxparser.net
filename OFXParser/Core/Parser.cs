@@ -105,6 +105,7 @@ namespace OFXParser
             // Variables used by Parser
             string currentElement = string.Empty;
             Transaction currentTransaction = null;
+            Balance balance = null;
 
             // Variables used to read XML
             HeaderExtract header = new HeaderExtract();
@@ -138,6 +139,9 @@ namespace OFXParser
                         {
                             case "STMTTRN":
                                 currentTransaction = new Transaction();
+                                break;
+                            case "LEDGERBAL":
+                                balance = new Balance();
                                 break;
                         }
                     }
@@ -215,6 +219,18 @@ namespace OFXParser
                                     currentTransaction.Description = string.IsNullOrEmpty(xmlTextReader.Value) ? string.Empty : xmlTextReader.Value.Trim().Replace("  ", " ");
                                 }
                                 break;
+                            case "BALAMT":
+                                if (balance != null)
+                                {
+                                    balance.Value = GetTransactionValue(xmlTextReader.Value, extract, settings);
+                                }
+                                break;
+                            case "DTASOF":
+                                if (balance != null)
+                                {
+                                    balance.Date = ConvertOfxDateToDateTime(xmlTextReader.Value, extract);
+                                }
+                                break;
                         }
                     }
                 }
@@ -232,6 +248,11 @@ namespace OFXParser
                 (settings.IsValidateAccountData && !hasAccountInfoData))
             {
                 throw new OFXParserException("Invalid OFX file!");
+            }
+
+            if (balance != null)
+            {
+                extract.Balance = balance;
             }
 
             return extract;

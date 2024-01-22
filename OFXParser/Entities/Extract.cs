@@ -9,6 +9,8 @@ namespace OFXParser.Entities
 
         public BankAccount BankAccount { get; set; }
 
+        public Balance Balance { get; set; }
+
         public string Status { get; set; }
 
         public DateTime InitialDate { get; set; }
