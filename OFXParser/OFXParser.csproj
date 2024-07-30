@@ -53,6 +53,7 @@
     <Compile Include="Core\Exceptions\OFXParserException.cs" />
     <Compile Include="Core\ParserSettings.cs" />
     <Compile Include="Core\PartDateTimeEnum.cs" />
+    <Compile Include="Entities\Balance.cs" />
     <Compile Include="Entities\Bank.cs" />
     <Compile Include="Entities\BankAccount.cs" />
     <Compile Include="Entities\Extract.cs" />
