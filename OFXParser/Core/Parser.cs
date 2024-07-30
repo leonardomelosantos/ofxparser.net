@@ -210,7 +210,7 @@ namespace OFXParser
                             case "CHECKNUM":
                                 if (currentTransaction != null)
                                 {
-                                    currentTransaction.Checksum = Convert.ToInt64(xmlTextReader.Value);
+                                    currentTransaction.Checksum = xmlTextReader.Value;
                                 }
                                 break;
                             case "MEMO":
