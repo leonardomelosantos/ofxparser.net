@@ -143,6 +143,9 @@ namespace OFXParser
                             case "LEDGERBAL":
                                 balance = new Balance();
                                 break;
+                            case "LEDGERBAL":
+                                balance = new Balance();
+                                break;
                         }
                     }
                     if (xmlTextReader.NodeType == XmlNodeType.Text)
