@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OFXParser.Core;
+﻿using OFXParser.Core;
 using OFXParser.Entities;
 
 namespace OFXParser.Test
