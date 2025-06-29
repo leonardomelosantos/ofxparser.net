@@ -27,7 +27,6 @@ steps:
     arguments: '--configuration $(buildConfiguration)'
     packagesToPack: '**/OFXParser.csproj'
     nobuild: true
-    versioningScheme: 'off'
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet push'
