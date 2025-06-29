@@ -29,9 +29,9 @@ steps:
     nobuild: true
     versioningScheme: 'off'
 
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet push'
+- task: NuGetCommand@2
   inputs:
     command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'external'
-    externalEndPoint: 'NugetPersonal'
+    publishFeedCredentials: 'NugetPersonal'
