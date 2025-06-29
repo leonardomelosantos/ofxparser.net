@@ -5,8 +5,8 @@
     <Company>Leonardo Melo Santos</Company>
     <Product>OFXParser</Product>
     <Copyright>Copyright ©  2007</Copyright>
-    <AssemblyVersion>1.0.6.0</AssemblyVersion>
-    <FileVersion>1.0.6.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <WarningLevel>0</WarningLevel>
