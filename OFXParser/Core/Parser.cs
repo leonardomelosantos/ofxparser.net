@@ -215,6 +215,9 @@ namespace OFXParser
                                     currentTransaction.Description = string.IsNullOrEmpty(xmlTextReader.Value) ? string.Empty : xmlTextReader.Value.Trim().Replace("  ", " ");
                                 }
                                 break;
+                            case "BALAMT":
+                                extract.FinalBalance = GetTransactionValue(xmlTextReader.Value, extract, settings);
+                                break;
                         }
                     }
                 }

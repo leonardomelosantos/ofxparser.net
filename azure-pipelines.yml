@@ -27,11 +27,17 @@ steps:
     arguments: '--configuration $(buildConfiguration)'
     packagesToPack: '**/OFXParser.csproj'
     nobuild: true
-    versioningScheme: 'off'
 
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet push'
+#- task: DotNetCoreCLI@2
+#  displayName: 'dotnet push'
+#  inputs:
+#    command: 'push'
+#    nuGetFeedType: 'external'
+#    externalEndPoint: 'NugetPersonal'
+
+- task: NuGetCommand@2
   inputs:
     command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'external'
-    externalEndPoint: 'NugetPersonal'
+    publishFeedCredentials: 'NugetPersonal'
