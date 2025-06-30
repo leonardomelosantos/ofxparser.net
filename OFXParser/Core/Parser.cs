@@ -212,7 +212,13 @@ namespace OFXParser
                             case "MEMO":
                                 if (currentTransaction != null)
                                 {
-                                    currentTransaction.Description = string.IsNullOrEmpty(xmlTextReader.Value) ? string.Empty : xmlTextReader.Value.Trim().Replace("  ", " ");
+                                    currentTransaction.Memo = string.IsNullOrEmpty(xmlTextReader.Value) ? string.Empty : xmlTextReader.Value.Trim().Replace("  ", " ");
+                                }
+                                break;
+                            case "NAME":
+                                if (currentTransaction != null)
+                                {
+                                    currentTransaction.Name = string.IsNullOrEmpty(xmlTextReader.Value) ? string.Empty : xmlTextReader.Value.Trim().Replace("  ", " ");
                                 }
                                 break;
                             case "BALAMT":

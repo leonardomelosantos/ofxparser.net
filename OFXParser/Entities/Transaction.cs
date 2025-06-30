@@ -12,9 +12,12 @@ namespace OFXParser.Entities
 
         public string Id { get; set; }
 
-        public string Description { get; set; }
+        public string Description => !string.IsNullOrEmpty(Memo) ? Memo : Name;
 
         public long Checksum { get; set; }
 
+        public string Memo { get; set; }
+
+        public string Name { get; set; }
     }
 }
