@@ -206,7 +206,12 @@ namespace OFXParser
                             case "CHECKNUM":
                                 if (currentTransaction != null)
                                 {
-                                    currentTransaction.Checksum = Convert.ToInt64(xmlTextReader.Value);
+                                    if (long.TryParse(xmlTextReader.Value, out long checksum)){
+                                        currentTransaction.Checksum = checksum;
+                                    }
+                                    if (decimal.TryParse(xmlTextReader.Value, out decimal checknum)){
+                                        currentTransaction.Checknum = checknum;
+                                    }
                                 }
                                 break;
                             case "MEMO":
