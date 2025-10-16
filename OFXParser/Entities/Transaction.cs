@@ -14,7 +14,9 @@ namespace OFXParser.Entities
 
         public string Description { get; set; }
 
+        [Obsolete("Use Checksum property instead")]
         public long Checksum { get; set; }
+        public decimal Checknum { get; set; }
 
     }
 }
