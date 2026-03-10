@@ -1,20 +1,25 @@
-using System;
+namespace OFXParser.Entities;
 
-namespace OFXParser.Entities
+/// <summary>
+/// Represents a financial transaction parsed from an OFX file.
+/// </summary>
+public class Transaction
 {
-    public class Transaction
-    {
-        public string Type { get; set; }
+    /// <summary>Gets or sets the transaction type (e.g., DEBIT, CREDIT, CHECK).</summary>
+    public string? Type { get; set; }
 
-        public DateTime Date { get; set; }
+    /// <summary>Gets or sets the date the transaction was posted.</summary>
+    public DateTime Date { get; set; }
 
-        public double TransactionValue { get; set; }
+    /// <summary>Gets or sets the transaction amount. Positive values indicate credits, negative indicate debits.</summary>
+    public decimal TransactionValue { get; set; }
 
-        public string Id { get; set; }
+    /// <summary>Gets or sets the unique transaction identifier (FITID).</summary>
+    public string? Id { get; set; }
 
-        public string Description { get; set; }
+    /// <summary>Gets or sets the transaction description or memo.</summary>
+    public string? Description { get; set; }
 
-        public long Checksum { get; set; }
-
-    }
+    /// <summary>Gets or sets the check number, when applicable.</summary>
+    public long Checksum { get; set; }
 }

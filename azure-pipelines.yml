@@ -1,43 +1,137 @@
-# ASP.NET
-# Build and test ASP.NET projects.
-# Add steps that publish symbols, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
+# OFXParser.NET - Azure Pipelines CI/CD
+# Builds, tests, and packages the OFXParser library targeting .NET 9.
 
 trigger:
-- master
+  branches:
+    include:
+      - master
+      - main
+      - claude/*
+
+pr:
+  branches:
+    include:
+      - master
+      - main
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'ubuntu-latest'
 
 variables:
   buildConfiguration: 'Release'
+  dotnetVersion: '9.x'
 
-steps:
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet build'
-  inputs:
-    command: 'build'
-    arguments: '--configuration $(buildConfiguration)'
-    projects: '**/*.csproj'
+stages:
 
-- task: DotNetCoreCLI@2
-  displayName: "dotnet pack"
-  inputs:
-    command: 'pack'
-    arguments: '--configuration $(buildConfiguration)'
-    packagesToPack: '**/OFXParser.csproj'
-    nobuild: true
+# ─── Stage 1: Build & Test ───────────────────────────────────────────────────
+- stage: BuildAndTest
+  displayName: 'Build and Test'
+  jobs:
+  - job: Build
+    displayName: 'Build, Test and Collect Coverage'
+    steps:
 
-#- task: DotNetCoreCLI@2
-#  displayName: 'dotnet push'
-#  inputs:
-#    command: 'push'
-#    nuGetFeedType: 'external'
-#    externalEndPoint: 'NugetPersonal'
+    - task: UseDotNet@2
+      displayName: 'Install .NET 9 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '$(dotnetVersion)'
 
-- task: NuGetCommand@2
-  inputs:
-    command: 'push'
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
-    nuGetFeedType: 'external'
-    publishFeedCredentials: 'NugetPersonal'
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore dependencies'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build solution'
+      inputs:
+        command: 'build'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+        projects: '**/*.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Run unit tests'
+      inputs:
+        command: 'test'
+        projects: '**/OFXParser.Test.csproj'
+        arguments: >
+          --configuration $(buildConfiguration)
+          --no-build
+          --logger trx
+          --results-directory $(Agent.TempDirectory)/TestResults
+          --collect "Code Coverage"
+      continueOnError: false
+
+    - task: PublishTestResults@2
+      displayName: 'Publish test results'
+      condition: always()
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '$(Agent.TempDirectory)/TestResults/**/*.trx'
+        failTaskOnFailedTests: true
+
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish code coverage'
+      condition: always()
+      inputs:
+        summaryFileLocation: '$(Agent.TempDirectory)/TestResults/**/*.xml'
+
+# ─── Stage 2: Pack ───────────────────────────────────────────────────────────
+- stage: Pack
+  displayName: 'Pack NuGet'
+  dependsOn: BuildAndTest
+  condition: succeeded()
+  jobs:
+  - job: Pack
+    displayName: 'Create NuGet package'
+    steps:
+
+    - task: UseDotNet@2
+      displayName: 'Install .NET 9 SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '$(dotnetVersion)'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore dependencies'
+      inputs:
+        command: 'restore'
+        projects: '**/OFXParser.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build library'
+      inputs:
+        command: 'build'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+        projects: '**/OFXParser.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Pack NuGet package'
+      inputs:
+        command: 'pack'
+        arguments: '--configuration $(buildConfiguration) --no-build'
+        packagesToPack: '**/OFXParser.csproj'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish NuGet artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'nuget'
+
+# ─── Stage 3: Publish (master/main only) ─────────────────────────────────────
+# - stage: Publish
+#   displayName: 'Publish to NuGet.org'
+#   dependsOn: Pack
+#   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
+#   jobs:
+#   - job: Publish
+#     displayName: 'Push to NuGet.org'
+#     steps:
+#     - task: NuGetCommand@2
+#       displayName: 'Push NuGet package'
+#       inputs:
+#         command: 'push'
+#         packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+#         nuGetFeedType: 'external'
+#         publishFeedCredentials: 'NugetPersonal'
