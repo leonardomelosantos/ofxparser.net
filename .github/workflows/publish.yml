@@ -1,0 +1,108 @@
+# OFXParser.NET — Publish: Build, Test & Push to NuGet.org
+# Triggered when a version tag (e.g. v2.0.0) is pushed to the repository.
+# Requires a repository secret named NUGET_API_KEY.
+
+name: Publish — NuGet.org
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'   # matches v2.0.0, v2.1.0-rc1, etc.
+
+env:
+  DOTNET_VERSION: '9.x'
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  # ─── Job 1: Build & Test ───────────────────────────────────────────────────
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+      - name: Run unit tests
+        run: >
+          dotnet test OFXParser.Test/OFXParser.Test.csproj
+          --configuration ${{ env.BUILD_CONFIGURATION }}
+          --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory "${{ runner.temp }}/TestResults"
+          --collect "Code Coverage"
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Tests (publish run)
+          path: '${{ runner.temp }}/TestResults/**/*.trx'
+          reporter: dotnet-trx
+          fail-on-error: true
+
+  # ─── Job 2: Pack & Publish ─────────────────────────────────────────────────
+  publish:
+    name: Pack and Publish to NuGet.org
+    runs-on: ubuntu-latest
+    needs: build-and-test          # only runs if tests pass
+    environment: nuget-production  # optional: use a GitHub Environment for manual approval
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore OFXParser/OFXParser.csproj
+
+      # Extract the semver from the tag (strips the leading 'v')
+      - name: Resolve package version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build library
+        run: >
+          dotnet build OFXParser/OFXParser.csproj
+          --configuration ${{ env.BUILD_CONFIGURATION }}
+          --no-restore
+          -p:Version=${{ steps.version.outputs.VERSION }}
+          -p:AssemblyVersion=${{ steps.version.outputs.VERSION }}
+          -p:FileVersion=${{ steps.version.outputs.VERSION }}
+
+      - name: Pack NuGet package
+        run: >
+          dotnet pack OFXParser/OFXParser.csproj
+          --configuration ${{ env.BUILD_CONFIGURATION }}
+          --no-build
+          --output ./nupkgs
+          -p:PackageVersion=${{ steps.version.outputs.VERSION }}
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package-${{ steps.version.outputs.VERSION }}
+          path: ./nupkgs/*.nupkg
+          retention-days: 30
+
+      - name: Push to NuGet.org
+        run: >
+          dotnet nuget push ./nupkgs/*.nupkg
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate

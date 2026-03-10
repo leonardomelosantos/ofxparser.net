@@ -1,0 +1,60 @@
+# OFXParser.NET — CI: Build & Test
+# Runs on every Pull Request targeting master or main.
+
+name: CI — Build & Test
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+
+env:
+  DOTNET_VERSION: '9.x'
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  build-and-test:
+    name: Build and Test (.NET 9)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+      - name: Run unit tests
+        run: >
+          dotnet test OFXParser.Test/OFXParser.Test.csproj
+          --configuration ${{ env.BUILD_CONFIGURATION }}
+          --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory "${{ runner.temp }}/TestResults"
+          --collect "Code Coverage"
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Tests
+          path: '${{ runner.temp }}/TestResults/**/*.trx'
+          reporter: dotnet-trx
+          fail-on-error: true
+
+      - name: Upload test results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '${{ runner.temp }}/TestResults'
+          retention-days: 7
