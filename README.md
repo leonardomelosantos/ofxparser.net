@@ -42,6 +42,8 @@ Install-Package OFXParser
 ## Documentação
 
 - **Parser.GenerateExtract(path)**: Lê o arquivo OFX e retorna um objeto `Extract` com as transações.
+- **Parser.GenerateExtract(path, settings)**: Igual ao anterior, com as opções de `ParserSettings`.
+- **ParserSettings.Encoding**: Encoding do arquivo OFX, para bancos que não usam UTF-8 (padrão). Ex.: `new ParserSettings { Encoding = Encoding.GetEncoding("iso-8859-1") }`. No .NET Core/.NET 5+, code pages como Windows-1252 exigem `Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)` antes de `Encoding.GetEncoding(1252)`.
 - **Extract.Transactions**: Lista de transações extraídas do arquivo.
 - **Extract.Account**: Informações da conta bancária.
 

@@ -3,6 +3,7 @@ using OFXParser.Entities;
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace OFXParser
@@ -12,6 +13,7 @@ namespace OFXParser
         #region Constants
 
         private const string MESSAGE_BANK_ID_ISNT_NUMERIC_VALUE = "Bank id isn't numeric value: {0}";
+        private const string MESSAGE_INVALID_CHECKNUM = "Invalid checknum: {0}";
         private const string MESSAGE_INVALID_DATETIME = "Invalid datetime {0}";
         private const string MESSAGE_INVALID_TRANSACTION_VALUE_AMOUNT = "Invalid transaction value/amount: {0}";
         private const string MESSAGE_OFX_FILE_NOT_FOUND = "OFX source file not found: {0}";
@@ -33,7 +35,7 @@ namespace OFXParser
 
         public static Extract GenerateExtract(string ofxSourceFile, ParserSettings settings)
         {
-            ExportOfxToXml(ofxSourceFile, ofxSourceFile + ".xml");
+            ExportOfxToXml(ofxSourceFile, ofxSourceFile + ".xml", settings?.Encoding);
 
             XmlTextReader xmlTextReader = new XmlTextReader(ofxSourceFile + ".xml");
 
@@ -48,8 +50,9 @@ namespace OFXParser
         /// This method translate an OFX file to XML tags, independent of the content.
         /// </summary>
         /// <param name="ofxSourceFile">OFX source file</param>
+        /// <param name="encoding">Encoding of OFX source file. If it is null, UTF-8 is used.</param>
         /// <returns>XML tags in StringBuilder object.</returns>
-        private static StringBuilder TranslateOfxToXml(string ofxSourceFile)
+        private static StringBuilder TranslateOfxToXml(string ofxSourceFile, Encoding encoding)
         {
             StringBuilder result = new StringBuilder();
             int level = 0;
@@ -58,10 +61,10 @@ namespace OFXParser
             if (!File.Exists(ofxSourceFile))
                 throw new FileNotFoundException("OFX source file not found: " + ofxSourceFile);
 
-            StreamReader streamReader = File.OpenText(ofxSourceFile);
+            StreamReader streamReader = encoding == null ? File.OpenText(ofxSourceFile) : new StreamReader(ofxSourceFile, encoding);
             while ((line = streamReader.ReadLine()) != null)
             {
-                line = line.Trim();
+                line = EscapeAmpersands(line.Trim());
 
                 if (line.StartsWith("</") && line.EndsWith(">"))
                 {
@@ -206,7 +209,7 @@ namespace OFXParser
                             case "CHECKNUM":
                                 if (currentTransaction != null)
                                 {
-                                    currentTransaction.Checksum = Convert.ToInt64(xmlTextReader.Value);
+                                    currentTransaction.Checksum = TryGetChecksum(xmlTextReader.Value, extract);
                                 }
                                 break;
                             case "MEMO":
@@ -245,7 +248,8 @@ namespace OFXParser
         /// </summary>
         /// <param name="ofxSourceFile">Path of OFX source file</param>
         /// <param name="xmlNewFile">Path of the XML file, internally generated.</param>
-        private static void ExportOfxToXml(string ofxSourceFile, string xmlNewFile)
+        /// <param name="encoding">Encoding of OFX source file. If it is null, UTF-8 is used.</param>
+        private static void ExportOfxToXml(string ofxSourceFile, string xmlNewFile, Encoding encoding)
         {
             if (!System.IO.File.Exists(ofxSourceFile))
             {
@@ -257,7 +261,7 @@ namespace OFXParser
                 throw new ArgumentException(string.Format(MESSAGE_NAME_NEW_FILE_INVALID, xmlNewFile));
             }
 
-            StringBuilder ofxTranslated = TranslateOfxToXml(ofxSourceFile);
+            StringBuilder ofxTranslated = TranslateOfxToXml(ofxSourceFile, encoding);
 
             WriteCreatedXmlIntoTargetInternalFile(xmlNewFile, ofxTranslated);
         }
@@ -277,7 +281,18 @@ namespace OFXParser
         }
 
         /// <summary>
-        /// This method return the correct closing tag string 
+        /// This method escapes the ampersands that would make the XML invalid. Some banks send
+        /// them unescaped, while others send XML references, which must be kept as they are.
+        /// </summary>
+        /// <param name="line">Line of OFX file</param>
+        /// <returns>Line with ampersands escaped.</returns>
+        private static string EscapeAmpersands(string line)
+        {
+            return Regex.Replace(line, "&(?!(amp|lt|gt|quot|apos|#[0-9]+|#x[0-9a-fA-F]+);)", "&amp;");
+        }
+
+        /// <summary>
+        /// This method return the correct closing tag string
         /// </summary>
         /// <param name="content">Content of analysis</param>
         /// <returns>String with ending tag.</returns>
@@ -389,6 +404,15 @@ namespace OFXParser
                 return bankId;
 
             extract.ImportingErrors.Add(string.Format(MESSAGE_BANK_ID_ISNT_NUMERIC_VALUE, value));
+            return 0;
+        }
+
+        private static long TryGetChecksum(string value, Extract extract)
+        {
+            if (long.TryParse(value, out long checksum))
+                return checksum;
+
+            extract.ImportingErrors.Add(string.Format(MESSAGE_INVALID_CHECKNUM, value));
             return 0;
         }
 
