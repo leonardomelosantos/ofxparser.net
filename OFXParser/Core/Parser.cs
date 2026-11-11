@@ -33,6 +33,14 @@ namespace OFXParser
 
         public static Extract GenerateExtract(string ofxSourceFile, ParserSettings settings)
         {
+            string ofxContent = System.IO.File.ReadAllText(ofxSourceFile);
+            ofxContent = ofxContent.Replace("&", string.Empty);
+            ofxContent = ofxContent.Replace("< ", string.Empty);
+            ofxContent = ofxContent.Replace(" >", string.Empty);
+            ofxContent = ofxContent.Replace("\"", string.Empty);
+            ofxContent = ofxContent.Replace("'", string.Empty);
+            System.IO.File.WriteAllText(ofxSourceFile, ofxContent);
+
             ExportOfxToXml(ofxSourceFile, ofxSourceFile + ".xml");
 
             XmlTextReader xmlTextReader = new XmlTextReader(ofxSourceFile + ".xml");
@@ -140,9 +148,6 @@ namespace OFXParser
                             case "STMTTRN":
                                 currentTransaction = new Transaction();
                                 break;                       
-                            case "LEDGERBAL":
-                                balance = new Balance();
-                                break;
                             case "LEDGERBAL":
                                 balance = new Balance();
                                 break;
